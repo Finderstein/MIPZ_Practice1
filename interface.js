@@ -9,11 +9,33 @@ const getInitialData = () => {
 
 	while (countryCount !== 0) {
 		countryCount = +prompt('Type number of countries: ');
+		if (isNaN(countryCount)) {
+			console.log('Invalid number of countries. Try again.');
+			continue;
+		}
+
+		if (countryCount === 0) {
+			break;
+		}
+
 		for (let i = 0; i < countryCount; i++) {
 			const input = prompt(
 				'Type country information (country_name xl yl xh yh): '
 			);
 			const answer = input.split(' ');
+
+			if (
+				answer.length !== 5 ||
+				isNaN(+answer[1]) ||
+				isNaN(+answer[2]) ||
+				isNaN(+answer[3]) ||
+				isNaN(+answer[4])
+			) {
+				console.log('Invalid input of country information');
+				i--;
+				continue;
+			}
+
 			countryNames.push(answer[0]);
 			countries.push({
 				name: answer[0],
@@ -26,17 +48,15 @@ const getInitialData = () => {
 			});
 		}
 
-		if (countryCount !== 0) {
-			caseNumber++;
-			data.push({
-				caseNumber,
-				countryNames,
-				countries,
-			});
+		caseNumber++;
+		data.push({
+			caseNumber,
+			countryNames,
+			countries,
+		});
 
-			countryNames = [];
-			countries = [];
-		}
+		countryNames = [];
+		countries = [];
 	}
 
 	return data;

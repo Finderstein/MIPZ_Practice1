@@ -31,13 +31,17 @@ const getMatrixDimensions = (countries) => {
 
 // Initializing matrix with empty objects
 const initializeMatrix = (countryMatrix, matrixDimensions) => {
-	for (let row = 0; row <= matrixDimensions.maxRows; row++) {
-		const row = [];
-		for (let column = 0; column <= matrixDimensions.maxColumns; column++) {
+	for (let rowCount = 0; rowCount <= matrixDimensions.maxRows; rowCount++) {
+		const matrixRow = [];
+		for (
+			let columnCount = 0;
+			columnCount <= matrixDimensions.maxColumns;
+			columnCount++
+		) {
 			const emptyCity = {};
-			row.push(emptyCity);
+			matrixRow.push(emptyCity);
 		}
-		countryMatrix.push(row);
+		countryMatrix.push(matrixRow);
 	}
 };
 
@@ -45,14 +49,14 @@ const initializeMatrix = (countryMatrix, matrixDimensions) => {
 const setMatrixValues = (countryMatrix, countryNames, countries) => {
 	for (const country of countries) {
 		for (
-			let row = country.dimensions.yl;
-			row <= country.dimensions.yh;
-			row++
+			let rowCount = country.dimensions.yl;
+			rowCount <= country.dimensions.yh;
+			rowCount++
 		) {
 			for (
-				let column = country.dimensions.xl;
-				column <= country.dimensions.xh;
-				column++
+				let columnCount = country.dimensions.xl;
+				columnCount <= country.dimensions.xh;
+				columnCount++
 			) {
 				const city = { country: country.name };
 
@@ -61,7 +65,7 @@ const setMatrixValues = (countryMatrix, countryNames, countries) => {
 					city[countryName] =
 						country.name === countryName ? 1000000 : 0;
 				}
-				countryMatrix[row][column] = city;
+				countryMatrix[rowCount][columnCount] = city;
 			}
 		}
 	}
@@ -86,19 +90,24 @@ const calculateDiffusion = (countryMatrix, transactionMatrix, countryNames) => {
 		completedCountries.length < countryNames.length
 	) {
 		// Go to each city and make transaction to surounding cities depending on city current balance
-		for (let row = 0; row < countryMatrix.length; row++) {
-			for (let column = 0; column < countryMatrix[row].length; column++) {
-				const currentCity = countryMatrix[row][column];
+		for (let rowCount = 0; rowCount < countryMatrix.length; rowCount++) {
+			for (
+				let columnCount = 0;
+				columnCount < countryMatrix[rowCount].length;
+				columnCount++
+			) {
+				const currentCity = countryMatrix[rowCount][columnCount];
 				if (!currentCity.country) {
 					continue;
 				}
 
-				const transactionCurrentCity = transactionMatrix[row][column];
+				const transactionCurrentCity =
+					transactionMatrix[rowCount][columnCount];
 				const transactionSurroundingCities = [
-					(transactionMatrix[row - 1] || [])[column],
-					(transactionMatrix[row] || [])[column - 1],
-					(transactionMatrix[row] || [])[column + 1],
-					(transactionMatrix[row + 1] || [])[column],
+					(transactionMatrix[rowCount - 1] || [])[columnCount],
+					(transactionMatrix[rowCount] || [])[columnCount - 1],
+					(transactionMatrix[rowCount] || [])[columnCount + 1],
+					(transactionMatrix[rowCount + 1] || [])[columnCount],
 				];
 				for (const transactionCity of transactionSurroundingCities) {
 					if (transactionCity && transactionCity.country) {
