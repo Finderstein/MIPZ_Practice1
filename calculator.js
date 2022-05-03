@@ -1,5 +1,9 @@
 const _ = require('lodash');
 
+const MAX_ITERATIONS = 1000000;
+const INITIAL_COINS = 1000000;
+const PORTION_DIVIDER = 1000;
+
 const euroDiffusion = (countryNames, countries) => {
 	let countryMatrix = [];
 	const matrixDimensions = getMatrixDimensions(countries);
@@ -31,12 +35,12 @@ const getMatrixDimensions = (countries) => {
 
 // Initializing matrix with empty objects
 const initializeMatrix = (countryMatrix, matrixDimensions) => {
-	for (let rowCount = 0; rowCount <= matrixDimensions.maxRows; rowCount++) {
+	for (let rowIndex = 0; rowIndex <= matrixDimensions.maxRows; rowIndex++) {
 		const matrixRow = [];
 		for (
-			let columnCount = 0;
-			columnCount <= matrixDimensions.maxColumns;
-			columnCount++
+			let columnIndex = 0;
+			columnIndex <= matrixDimensions.maxColumns;
+			columnIndex++
 		) {
 			const emptyCity = {};
 			matrixRow.push(emptyCity);
@@ -49,23 +53,23 @@ const initializeMatrix = (countryMatrix, matrixDimensions) => {
 const setMatrixValues = (countryMatrix, countryNames, countries) => {
 	for (const country of countries) {
 		for (
-			let rowCount = country.dimensions.yl;
-			rowCount <= country.dimensions.yh;
-			rowCount++
+			let rowIndex = country.dimensions.yl;
+			rowIndex <= country.dimensions.yh;
+			rowIndex++
 		) {
 			for (
-				let columnCount = country.dimensions.xl;
-				columnCount <= country.dimensions.xh;
-				columnCount++
+				let columnIndex = country.dimensions.xl;
+				columnIndex <= country.dimensions.xh;
+				columnIndex++
 			) {
 				const city = { country: country.name };
 
 				// Setting number of coins from each country on start
 				for (const countryName of countryNames) {
 					city[countryName] =
-						country.name === countryName ? 1000000 : 0;
+						country.name === countryName ? INITIAL_COINS : 0;
 				}
-				countryMatrix[rowCount][columnCount] = city;
+				countryMatrix[rowIndex][columnIndex] = city;
 			}
 		}
 	}
@@ -86,35 +90,35 @@ const calculateDiffusion = (countryMatrix, transactionMatrix, countryNames) => {
 	const completedCountries = [];
 
 	while (
-		iteration < 1000000 && // To avoid infinite cycle
+		iteration < MAX_ITERATIONS && // To avoid infinite cycle
 		completedCountries.length < countryNames.length
 	) {
 		// Go to each city and make transaction to surounding cities depending on city current balance
-		for (let rowCount = 0; rowCount < countryMatrix.length; rowCount++) {
+		for (let rowIndex = 0; rowIndex < countryMatrix.length; rowIndex++) {
 			for (
-				let columnCount = 0;
-				columnCount < countryMatrix[rowCount].length;
-				columnCount++
+				let columnIndex = 0;
+				columnIndex < countryMatrix[rowIndex].length;
+				columnIndex++
 			) {
-				const currentCity = countryMatrix[rowCount][columnCount];
+				const currentCity = countryMatrix[rowIndex][columnIndex];
 				if (!currentCity.country) {
 					continue;
 				}
 
 				const transactionCurrentCity =
-					transactionMatrix[rowCount][columnCount];
+					transactionMatrix[rowIndex][columnIndex];
 				const transactionSurroundingCities = [
-					(transactionMatrix[rowCount - 1] || [])[columnCount],
-					(transactionMatrix[rowCount] || [])[columnCount - 1],
-					(transactionMatrix[rowCount] || [])[columnCount + 1],
-					(transactionMatrix[rowCount + 1] || [])[columnCount],
+					(transactionMatrix[rowIndex - 1] || [])[columnIndex],
+					(transactionMatrix[rowIndex] || [])[columnIndex - 1],
+					(transactionMatrix[rowIndex] || [])[columnIndex + 1],
+					(transactionMatrix[rowIndex + 1] || [])[columnIndex],
 				];
 				for (const transactionCity of transactionSurroundingCities) {
 					if (transactionCity && transactionCity.country) {
 						// Send to surounging cities coins of EACH country depending on city current balance
 						for (const countryName of countryNames) {
 							const value = Math.floor(
-								currentCity[countryName] / 1000
+								currentCity[countryName] / PORTION_DIVIDER
 							);
 							transactionCity[countryName] += value;
 							transactionCurrentCity[countryName] -= value;
@@ -134,21 +138,10 @@ const calculateDiffusion = (countryMatrix, transactionMatrix, countryNames) => {
 				(city) => city.country === countryName
 			);
 
-			// Check if some of them DO NOT HAVE coins of other countries
-			const countryNotComplete = countryCities.some((city) => {
-				for (const countryName of countryNames) {
-					const haveCoinsOfThisCountry = city[countryName] > 0;
-					if (!haveCoinsOfThisCountry) {
-						return true;
-					}
-				}
-				return false;
-			});
-
 			// Check if all cities of country have coins of all other countries and
 			// this country have not already been added to the result
 			if (
-				!countryNotComplete &&
+				checkCountryCompleted(countryCities, countryNames) &&
 				!completedCountries.some(
 					(country) => country.countryName === countryName
 				)
@@ -164,6 +157,17 @@ const calculateDiffusion = (countryMatrix, transactionMatrix, countryNames) => {
 	}
 
 	return completedCountries;
+};
+
+const checkCountryCompleted = (countryCities, countryNames) => {
+	return countryCities.every((city) => {
+		for (const countryName of countryNames) {
+			if (city[countryName] === 0) {
+				return false;
+			}
+		}
+		return true;
+	});
 };
 
 module.exports = {
